@@ -1,0 +1,22 @@
+{
+  "name": "@ng-census/core",
+  "version": "0.1.0",
+  "description": "Angular codebase analyzer engine. Returns data, never formats it.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@angular/compiler": "^22.1.6",
+    "ts-morph": "^28.0.0"
+  }
+}

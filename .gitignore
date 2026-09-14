@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# The fixture projects are checked in on purpose. Their node_modules holds a
+# single stub @angular/core/package.json, which is what version detection
+# reads. Without it the version-pair test has nothing to detect.
+!fixtures/**/node_modules/
+!fixtures/**/node_modules/**
+
+.census-baseline.json
+.DS_Store

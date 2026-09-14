@@ -1,0 +1,17 @@
+<div *ngIf="items.length">
+  <span *ngFor="let item of items">{{ item.name }}</span>
+  <em *ngFor="let item of items; trackBy: byId">{{ item.id }}</em>
+</div>
+
+<div [ngSwitch]="mode">
+  <p *ngSwitchCase="'a'">A</p>
+  <p *ngSwitchDefault>other</p>
+</div>
+
+<p [title]="getLabel()">{{ getLabel() }}</p>
+<p>{{ stream$ | async }}</p>
+<div [innerHTML]="html"></div>
+
+@for (item of items; track $index) {
+  <i>{{ item.name }}</i>
+}

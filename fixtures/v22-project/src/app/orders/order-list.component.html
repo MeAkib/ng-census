@@ -1,0 +1,11 @@
+<section class="orders">
+  @if (visible()) {
+    <ul>
+      @for (order of visible(); track order.id) {
+        <li (click)="select(order.id)">{{ order.name }}</li>
+      }
+    </ul>
+  } @else {
+    <p>No orders.</p>
+  }
+</section>

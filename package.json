@@ -1,0 +1,22 @@
+{
+  "name": "ng-census-monorepo",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/cli"
+  ],
+  "scripts": {
+    "build": "tsc --build && tsc -p tests/tsconfig.json",
+    "test": "npm run build && node --test tests/dist/analyzer.test.js",
+    "clean": "rm -rf packages/*/dist tests/dist packages/*/*.tsbuildinfo *.tsbuildinfo",
+    "census": "node packages/cli/dist/bin.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "~5.9.3"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

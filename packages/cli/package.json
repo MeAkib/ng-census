@@ -1,0 +1,24 @@
+{
+  "name": "ng-census",
+  "version": "0.1.0",
+  "description": "Take a census of your Angular application.",
+  "type": "module",
+  "bin": {
+    "ng-census": "./dist/bin.js"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "angular",
+    "static-analysis",
+    "metrics",
+    "migration"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@ng-census/core": "0.1.0"
+  }
+}
