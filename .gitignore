@@ -9,4 +9,5 @@ dist/
 !fixtures/**/node_modules/**
 
 .census-baseline.json
+census-report.html
 .DS_Store

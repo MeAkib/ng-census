@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "build": "tsc --build && tsc -p tests/tsconfig.json",
-    "test": "npm run build && node --test tests/dist/analyzer.test.js",
+    "test": "npm run build && node --test tests/dist/*.test.js",
     "clean": "rm -rf packages/*/dist tests/dist packages/*/*.tsbuildinfo *.tsbuildinfo",
     "census": "node packages/cli/dist/bin.js"
   },

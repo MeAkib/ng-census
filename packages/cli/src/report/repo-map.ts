@@ -1,4 +1,5 @@
-import type { AnalysisResult, ComponentEntity, Entity } from '@ng-census/core';
+import type { AnalysisResult, ComponentEntity } from '@ng-census/core';
+import { isComponent } from './interpret.js';
 
 /**
  * One line per entity, for an agent.
@@ -68,8 +69,4 @@ function rank(components: ComponentEntity[]): ComponentEntity[] {
 function legacyWeight(entity: ComponentEntity): number {
   const m = entity.metrics;
   return (m.legacyControlFlow ?? 0) + (m.subscribeCalls ?? 0) + (m.injectedDeps ?? 0);
-}
-
-function isComponent(entity: Entity): entity is ComponentEntity {
-  return entity.kind === 'component';
 }

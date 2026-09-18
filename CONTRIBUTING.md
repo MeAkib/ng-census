@@ -92,6 +92,14 @@ A metric that cannot exist on the project's Angular version reports `null`.
 `0` means "we measured and found none". Confusing the two makes charts show
 failures for things that were never possible.
 
+### Interpretation lives in `interpret.ts`, not in a reporter
+
+Deciding what a raw flag *means* — is this standalone, what share of control
+flow is modern — happens in one file that every reporter reads. Put that logic
+in a reporter and the next reporter grows its own slightly different copy, and
+then the terminal and the HTML report disagree about the same run. For a tool
+whose entire claim is determinism, that is the worst possible bug.
+
 ### `core` never imports from a reporter
 
 The analyzer returns data. The CLI formats it. This separation is what lets

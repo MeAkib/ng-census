@@ -14,6 +14,7 @@ import {
 } from '@ng-census/core';
 import type { AnalysisResult, WorkspaceProject } from '@ng-census/core';
 import { renderTerminal } from './report/terminal.js';
+import { renderHtml } from './report/html.js';
 import { renderDrift } from './report/drift.js';
 import { DEFAULT_REPO_MAP_ROWS, renderRepoMap } from './report/repo-map.js';
 
@@ -27,6 +28,7 @@ import { DEFAULT_REPO_MAP_ROWS, renderRepoMap } from './report/repo-map.js';
 
 const DEFAULT_BASELINE = '.census-baseline.json';
 const DEFAULT_ATTENTION_ROWS = 5;
+const DEFAULT_REPORT = 'census-report.html';
 
 const USAGE = `
 ng-census ${TOOL_VERSION}
@@ -36,12 +38,13 @@ Usage
   ng-census analyze  [path] [options]   Terminal summary
   ng-census baseline [path] [options]   Snapshot current state to a file
   ng-census check    [path] [options]   Compare against a baseline, exit 1 on regression
+  ng-census report   [path] [options]   A readable HTML report you can share
   ng-census repo-map [path] [options]   One line per entity, for agents
   ng-census projects [path]             List the projects in an Angular workspace
 
 Options
   --project <name>   Analyze one project from angular.json
-  --out <file>       Write the result to a file as JSON instead of the terminal
+  --out <file>       Where to write (report: HTML, analyze: JSON, baseline: snapshot)
   --json             Print the full run object as JSON to stdout
   --filter <str>     Only analyze paths containing <str>
   --top <n>          Rows in the attention list (default 5; repo-map default 200)
@@ -52,6 +55,7 @@ Options
 
 Examples
   ng-census projects .
+  ng-census report . --project billing-solution
   ng-census analyze . --project billing-solution
   ng-census analyze . --out census.json
   ng-census baseline . --project billing-solution --out billing.baseline.json
@@ -215,6 +219,24 @@ async function main(): Promise<number> {
 
       const regressed = report.regressions.length + report.newEntityDebt.length;
       if (regressed > 0) return 1;
+      return strictExit(result, values.strict);
+    }
+
+    case 'report': {
+      const result = await run(projectRoot, filter, config.exclude, scope);
+      const target = resolve(values.out ?? DEFAULT_REPORT);
+
+      writeFileSync(target, renderHtml(result, projectRoot), 'utf8');
+
+      // Written to stderr, so `ng-census report --out -` style piping stays
+      // possible later and this line never lands inside a redirected file.
+      process.stderr.write(
+        `Report written to ${target} ` +
+          `(${count(result.entities.length, 'entity', 'entities')}, ` +
+          `${count(result.run.filesAnalyzed, 'file', 'files')} analyzed)\n` +
+          `Open it with: open ${target}\n`,
+      );
+
       return strictExit(result, values.strict);
     }
 

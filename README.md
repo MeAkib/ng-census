@@ -35,6 +35,7 @@ node packages/cli/dist/bin.js analyze /path/to/your/angular/app
 ## Usage
 
 ```bash
+ng-census report                    # a readable HTML report you can share
 ng-census analyze                   # current directory
 ng-census analyze ./apps/web        # a specific path
 ng-census analyze --filter orders   # only paths containing "orders"
@@ -70,6 +71,33 @@ A baseline records the scope it was taken with, and `check` refuses to compare
 across scopes. Otherwise a baseline of one application, checked against the
 whole workspace, reports every other application as newly added — a wall of
 false drift whose cause is invisible in the output.
+
+### The report
+
+The terminal summary says *that* something is worth looking at. The JSON says
+*where*, in a form nobody reads. The report is the middle: enough to act on,
+and enough to show someone.
+
+```bash
+ng-census report                          # writes census-report.html
+ng-census report --out team-review.html
+ng-census report --project billing        # one application from the workspace
+```
+
+One self-contained file. No scripts, no fonts, no network — it opens from a
+`file://` path on a laptop with no internet, survives being emailed, and
+prints. It leads with the migration burndown, then the files worth opening
+first, then a per-folder breakdown, then every finding with its line number.
+
+Two things it deliberately does not do:
+
+- **No score, grade or total.** The moment a single number exists, someone is
+  asked to raise it, and raising a number is always easier than fixing
+  anything.
+- **No red or green meters.** A red bar at 38% OnPush asserts that 38% is
+  failing, which is a judgement this tool does not make. Colour is used for
+  exactly one thing: the Angular LTS deadline, which is an external published
+  date rather than an opinion.
 
 ### Getting the full data out
 

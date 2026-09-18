@@ -66,8 +66,14 @@ only in what it does with the result.
   10. an AnalysisResult:  { run: {...}, entities: [...] }
             |
             v
-  11. report/terminal.ts  turn it into the text you see
+  11. report/*            turn it into the text you see
 ```
+
+Step 11 is four interchangeable reporters over one result: `terminal.ts` for
+humans at a prompt, `html.ts` for a report someone shares, `repo-map.ts` for
+coding agents, `drift.ts` for CI. They all read through `interpret.ts`, which
+is the only place that decides what a raw flag *means* — so two reporters can
+never give two different answers from one run.
 
 Steps 5 to 9 repeat once per file. Steps 1, 2, 3, 4 happen once.
 
@@ -115,9 +121,11 @@ counts what is in it: `*ngIf` versus `@if`, bindings, nesting depth,
 **10. `packages/core/src/types.ts`** — the output contract. If you are trying
 to understand the data, start here, not at the code that produces it.
 
-**11. `packages/cli/src/report/`** — three reporters over the same data:
-`terminal.ts` for humans, `repo-map.ts` for coding agents, `drift.ts` for CI.
-All interpretation of raw flags happens here, at read time.
+**11. `packages/cli/src/report/`** — the reporters, plus `interpret.ts`. All
+interpretation of raw flags happens in that one file, at read time: is this
+component standalone, what share of control flow is modern, which components
+deserve attention. Put an interpretation in a reporter and the next reporter
+will grow its own slightly different copy.
 
 ---
 
@@ -239,6 +247,8 @@ becomes a visible warning instead.
 | Where do I add a template metric? | `packages/core/src/rules/template.ts` |
 | Why does the CI gate fail on this? | `packages/core/src/baseline.ts` |
 | What does the terminal print? | `packages/cli/src/report/terminal.ts` |
+| What does the HTML report contain? | `packages/cli/src/report/html.ts` |
+| What does "64% standalone" actually mean? | `packages/cli/src/report/interpret.ts` |
 | How do I add a whole rule? | `docs/ADDING-A-RULE.md` |
 | It found no components | `docs/TROUBLESHOOTING.md` |
 

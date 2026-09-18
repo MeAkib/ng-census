@@ -25,7 +25,7 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: node --test tests/dist/analyzer.test.js
+      - run: node --test tests/dist/*.test.js
 
       # Dogfooding. The product's whole argument is that this gate belongs in
       # CI, so it runs here against a fixture project with a committed

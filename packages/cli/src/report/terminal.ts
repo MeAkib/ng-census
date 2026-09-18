@@ -1,24 +1,33 @@
-import type { AnalysisResult, ComponentEntity, Entity } from '@ng-census/core';
+import type { AnalysisResult, ComponentEntity } from '@ng-census/core';
+import { LTS_END_DATES, MIN_FULL_SUPPORT, MIN_SUPPORTED, supportLevel } from '@ng-census/core';
 import {
-  LTS_END_DATES,
-  MIN_FULL_SUPPORT,
-  MIN_SUPPORTED,
-  capabilities,
-  supportLevel,
-} from '@ng-census/core';
+  attentionWeight,
+  componentsOf,
+  displayName,
+  isOnPush,
+  isStandalone,
+  modernControlFlowRatio,
+  percentage,
+  usesModernDi,
+} from './interpret.js';
 
 /**
  * Terminal formatting.
  *
- * All interpretation of raw flags happens here, at read time, using the run's
- * angularMajor. The analyzer stored what it saw; this decides what it meant.
+ * The analyzer stored what it saw; deciding what it meant happens at read
+ * time. Those decisions live in `interpret.ts`, shared with the HTML report,
+ * so two reporters can never give two different answers from the same run.
+ *
+ * Three percentages and the worst offenders. Everything else is behind
+ * `--out` or `--json`: a terminal summary that scrolls is a summary nobody
+ * reads.
  */
 
 const BAR_WIDTH = 10;
 
 export function renderTerminal(result: AnalysisResult, topN: number): string {
   const lines: string[] = [];
-  const components = result.entities.filter(isComponent);
+  const components = componentsOf(result);
 
   lines.push('', renderHeader(result), '');
 
@@ -34,16 +43,16 @@ export function renderTerminal(result: AnalysisResult, topN: number): string {
   lines.push('');
   lines.push(...renderNeedsAttention(components, topN));
   lines.push('');
-  lines.push('  --json for full output');
+  lines.push('  --out report.html for the full report, --json for the raw data');
   lines.push('');
 
   return lines.join('\n');
 }
 
 function renderHeader(result: AnalysisResult): string {
-  const { run, entities } = result;
+  const { run } = result;
   const version = run.angularVersion ?? 'unknown version';
-  const count = entities.filter(isComponent).length;
+  const count = componentsOf(result).length;
   const seconds = (run.durationMs / 1000).toFixed(1);
 
   // The scope belongs in the header, not a footnote. A run over one
@@ -57,8 +66,8 @@ function renderHeader(result: AnalysisResult): string {
 /**
  * Warn when results may be unreliable.
  *
- * Driven by `supportLevel()` rather than by re-deriving the policy here. The
- * previous version compared against `MIN_SUPPORTED` directly and silently said
+ * Driven by `supportLevel()` rather than by re-deriving the policy here. An
+ * earlier version compared against `MIN_SUPPORTED` directly and silently said
  * nothing at all for majors 17, 18 and 19 — the exact versions the support
  * policy promises a warning for.
  */
@@ -135,9 +144,9 @@ function renderNothingFound(result: AnalysisResult): string[] {
 }
 
 function renderSummary(components: ComponentEntity[], major: number | null): string[] {
-  const onPush = percentage(components, (c) => isOnPush(c, major));
+  const onPush = percentage(components, isOnPush);
   const standalone = percentage(components, (c) => isStandalone(c, major));
-  const constructorFree = percentage(components, (c) => usesModernDi(c));
+  const constructorFree = percentage(components, usesModernDi);
 
   const lines = [
     `  OnPush              ${formatPercent(onPush)}  ${bar(onPush)}`,
@@ -147,70 +156,16 @@ function renderSummary(components: ComponentEntity[], major: number | null): str
 
   const controlFlow = modernControlFlowRatio(components);
   if (controlFlow !== null) {
-    lines.push(
-      `  Modern control flow ${formatPercent(controlFlow)}  ${bar(controlFlow)}`,
-    );
+    lines.push(`  Modern control flow ${formatPercent(controlFlow)}  ${bar(controlFlow)}`);
   }
 
   return lines;
 }
 
-/**
- * The migration burndown: modern blocks as a share of all control flow.
- *
- * Measured over blocks, not components, because that is what the migration
- * actually converts. A component with one `@if` and nine `*ngIf` is 10% done,
- * not 100%.
- *
- * Returns null when no component had a readable template, or when the project's
- * Angular predates @-blocks. Printing 0% there would report a project as
- * failing at something it could not attempt.
- */
-function modernControlFlowRatio(components: ComponentEntity[]): number | null {
-  let modern = 0;
-  let legacy = 0;
-  let measurable = false;
-
-  for (const c of components) {
-    const m = c.metrics.modernControlFlow;
-    const l = c.metrics.legacyControlFlow;
-    if (m === null && l === null) continue;
-    measurable = true;
-    modern += m ?? 0;
-    legacy += l ?? 0;
-  }
-
-  if (!measurable) return null;
-  const total = modern + legacy;
-  if (total === 0) return null;
-  return modern / total;
-}
-
-/**
- * Interpret the raw standalone flag.
- *
- * From v19 standalone is the default, so an absent flag means standalone.
- * Before v19 absence meant the opposite. This is the single most important
- * reason the flag is stored raw rather than as a boolean.
- */
-function isStandalone(entity: ComponentEntity, major: number | null): boolean {
-  const flag = entity.metrics.standaloneFlag;
-  if (flag === 'true') return true;
-  if (flag === 'false') return false;
-  return major !== null && capabilities(major).standaloneByDefault;
-}
-
-/** OnPush is never a default, so absence always means Default. */
-function isOnPush(entity: ComponentEntity, _major: number | null): boolean {
-  return entity.metrics.changeDetectionFlag === 'OnPush';
-}
-
-function usesModernDi(entity: ComponentEntity): boolean {
-  return !entity.findings.some((f) => f.rule === 'constructor-di');
-}
-
 function renderNeedsAttention(components: ComponentEntity[], topN: number): string[] {
-  const ranked = [...components].sort((a, b) => weight(b) - weight(a)).slice(0, topN);
+  const ranked = [...components]
+    .sort((a, b) => attentionWeight(b) - attentionWeight(a))
+    .slice(0, topN);
   if (ranked.length === 0) return [];
 
   const nameWidth = Math.max(...ranked.map((c) => displayName(c).length), 4);
@@ -227,38 +182,9 @@ function renderNeedsAttention(components: ComponentEntity[], topN: number): stri
   return ['Needs attention', ...rows];
 }
 
-/**
- * Ranking weight for the attention list.
- *
- * This orders rows for human reading. It is deliberately not exported, not
- * stored, and never shown as a number, so that nobody can be asked to improve
- * it. Raw counters are the product; this is only a sort key.
- */
-function weight(entity: ComponentEntity): number {
-  const { injectedDeps, classLoc, subscribeCalls, legacyControlFlow, methodCallsInTemplate } =
-    entity.metrics;
-  return (
-    (injectedDeps ?? 0) * 3 +
-    (classLoc ?? 0) / 20 +
-    (subscribeCalls ?? 0) * 2 +
-    (legacyControlFlow ?? 0) * 2 +
-    (methodCallsInTemplate ?? 0)
-  );
-}
-
 /** `-` for an unmeasured metric. A padded `0` would read as a real count. */
 function cell(value: number | null, width: number): string {
   return (value === null ? '-' : String(value)).padStart(width);
-}
-
-function displayName(entity: ComponentEntity): string {
-  const file = entity.filePath.split('/').pop() ?? entity.filePath;
-  return file.replace(/\.component\.ts$/, '').replace(/\.ts$/, '');
-}
-
-function percentage(items: ComponentEntity[], predicate: (c: ComponentEntity) => boolean): number {
-  if (items.length === 0) return 0;
-  return items.filter(predicate).length / items.length;
 }
 
 function formatPercent(ratio: number): string {
@@ -268,8 +194,4 @@ function formatPercent(ratio: number): string {
 function bar(ratio: number): string {
   const filled = Math.round(ratio * BAR_WIDTH);
   return '█'.repeat(filled) + '░'.repeat(BAR_WIDTH - filled);
-}
-
-function isComponent(entity: Entity): entity is ComponentEntity {
-  return entity.kind === 'component';
 }

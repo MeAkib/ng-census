@@ -28,6 +28,12 @@ breaks.
   `ng-census projects` lists the names. Entity ids stay relative to the
   workspace root, so scoped and whole-workspace runs describe the same
   component by the same id.
+- `ng-census report` writes a self-contained HTML report: the migration
+  burndown first, then the components worth opening, a per-folder breakdown,
+  and every finding with its line number. No scripts, no fonts, no network, so
+  it opens offline, survives being emailed and prints. It carries no score and
+  no grade, and colour is reserved for the Angular LTS deadline — the one fact
+  on the page that is an external published date rather than a judgement.
 - `--out <file>` writes the run object to a file. `--json` remains for pipes.
 - A baseline records the scope it was taken with, and `check` refuses to
   compare across scopes.

@@ -267,7 +267,26 @@ with the rest of the tool.
 
 ---
 
-## Step 9 — Finish the documentation
+## Step 9 — Put it in the report
+
+A rule nobody sees is a rule nobody acts on. Findings appear in the HTML report
+automatically — they are grouped by rule id with no configuration. The
+**migration table** is the curated part, and it needs a row:
+
+`packages/cli/src/report/html.ts`, in `BURNDOWN_RULES`:
+
+```ts
+  { rule: 'legacy-ngclass', label: 'ngClass / ngStyle', modern: '[class] / [style]' },
+```
+
+`label` is what a reader sees, `modern` is what they should write instead. Both
+are prose, not code identifiers — this table is the one part of the output
+aimed at someone who has not read `RULES.md`.
+
+Leave it out if the rule is not part of a migration. Rows with a count of zero
+are dropped automatically, so an empty rule costs nothing.
+
+## Step 10 — Finish the documentation
 
 - `RULES.md` — the exact definition from step 0, in the rule table
 - `RULES.md` section 2 — add it to the legacy catalogue with its modern form
@@ -289,6 +308,7 @@ differently.
 [ ] Fixture containing both what it matches and what it must not
 [ ] Test asserting an exact number
 [ ] Decided, deliberately, whether it gates CI
+[ ] Added to BURNDOWN_RULES in html.ts, if it is part of a migration
 [ ] README and RULES.md updated
 [ ] npm test passes
 ```
