@@ -59,6 +59,8 @@ const BURNDOWN_RULES: ReadonlyArray<{ rule: string; label: string; modern: strin
   { rule: 'destroy-subject', label: 'ngOnDestroy teardown Subject', modern: 'takeUntilDestroyed()' },
   { rule: 'behaviorsubject-state', label: 'BehaviorSubject as state', modern: 'signal()' },
   { rule: 'missing-onpush', label: 'No OnPush and no signals', modern: 'OnPush, zoneless-ready' },
+  { rule: 'empty-lifecycle-hook', label: 'Empty lifecycle hook', modern: 'delete it' },
+  { rule: 'empty-constructor', label: 'Empty constructor', modern: 'delete it' },
   { rule: 'loop-without-track', label: '*ngFor without trackBy', modern: '@for with track' },
   { rule: 'loop-tracked-by-index', label: '@for tracked by $index', modern: 'track by identity' },
   { rule: 'method-call-in-template', label: 'Method call in a binding', modern: 'a signal or a field' },

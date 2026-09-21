@@ -19,6 +19,10 @@ export interface ClassRuleResult {
   subscribeCalls: number;
   signalApiCalls: number | null;
   lifecycleHooks: number;
+  /** Lifecycle hooks whose body contains no statements. */
+  emptyLifecycleHooks: number;
+  /** Constructors with no parameters and no statements. */
+  emptyConstructors: number;
   publicMethods: number;
   classLoc: number;
   /**
@@ -72,6 +76,8 @@ export function analyzeClass(
   const signalApiCalls = caps.signals ? countSignalApiCalls(classDecl) : null;
 
   findRxjsStateFields(classDecl, file, findings);
+  const emptyLifecycleHooks = findEmptyLifecycleHooks(classDecl, file, findings);
+  const emptyConstructors = findEmptyConstructors(classDecl, file, findings);
 
   return {
     injectedDeps: constructorDeps + inject,
@@ -82,6 +88,8 @@ export function analyzeClass(
     subscribeCalls,
     signalApiCalls,
     lifecycleHooks: countLifecycleHooks(classDecl),
+    emptyLifecycleHooks,
+    emptyConstructors,
     publicMethods: countPublicMethods(classDecl),
     classLoc: measureClassLoc(classDecl),
     signalFields: collectSignalFields(classDecl),
@@ -306,6 +314,82 @@ function collectSignalFields(classDecl: ClassDeclaration): string[] {
   }
 
   return names;
+}
+
+/**
+ * Lifecycle hooks that do nothing: `ngOnInit(): void {}`.
+ *
+ * Older Angular CLI versions generated an empty `ngOnInit` in every new
+ * component, so the pattern is all over the code AI tools learned from, and
+ * agents still write it by habit. It is dead code, and it misleads the next
+ * reader into thinking initialisation happens there.
+ *
+ * "Empty" means no statements. A body holding only a comment
+ * (`ngOnInit() { // TODO }`) is empty too — the comment does not run.
+ *
+ * `lifecycleHooks` still counts these. Taking them out would change what that
+ * metric means, and every stored baseline would silently stop being
+ * comparable. The empty ones get their own count instead.
+ */
+function findEmptyLifecycleHooks(
+  classDecl: ClassDeclaration,
+  file: string,
+  findings: Finding[],
+): number {
+  let count = 0;
+
+  for (const method of classDecl.getMethods()) {
+    const name = method.getName();
+    if (!LIFECYCLE_HOOKS.has(name)) continue;
+    if (!hasEmptyBody(method.getBody())) continue;
+
+    count += 1;
+    findings.push({ rule: 'empty-lifecycle-hook', ...startPosition(method, file), detail: name });
+  }
+
+  return count;
+}
+
+/**
+ * Constructors that do nothing: `constructor() {}`.
+ *
+ * Both conditions matter. `constructor(private http: HttpClient) {}` has an
+ * empty body but is not dead code — its parameters *are* the injection, and
+ * `constructor-di` already reports it. Only a constructor with no parameters
+ * and no statements can be deleted without changing behaviour.
+ *
+ * `constructor() { super(); }` is deliberately not counted. It is usually
+ * redundant, but whether it is depends on the parent class, which lives in
+ * another file. A rule that has to guess is not exact, and an inexact rule
+ * cannot be allowed near a CI gate.
+ */
+function findEmptyConstructors(
+  classDecl: ClassDeclaration,
+  file: string,
+  findings: Finding[],
+): number {
+  let count = 0;
+
+  for (const ctor of classDecl.getConstructors()) {
+    if (ctor.getParameters().length > 0) continue;
+    if (!hasEmptyBody(ctor.getBody())) continue;
+
+    count += 1;
+    findings.push({ rule: 'empty-constructor', ...startPosition(ctor, file) });
+  }
+
+  return count;
+}
+
+/**
+ * True for a body with no statements.
+ *
+ * A missing body — an overload signature, or an abstract method — is not
+ * empty, it is absent, and says nothing about dead code.
+ */
+function hasEmptyBody(body: Node | undefined): boolean {
+  if (!body || !Node.isBlock(body)) return false;
+  return body.getStatements().length === 0;
 }
 
 function countLifecycleHooks(classDecl: ClassDeclaration): number {

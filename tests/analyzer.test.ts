@@ -752,3 +752,75 @@ describe('multi-project workspaces', () => {
     assert.equal(scoped.run.filesScanned, 1);
   });
 });
+
+describe('dead scaffolding', () => {
+  // Older Angular CLI versions generated `constructor() {}` and an empty
+  // `ngOnInit` in every component. It is all over the code AI tools learned
+  // from, and agents still write it by habit.
+
+  test('counts lifecycle hooks with no statements', async () => {
+    const { entities } = await analyzeProject({ projectRoot: RULES });
+    const entity = componentNamed(entities, 'ScaffoldComponent');
+
+    // ngOnInit() {} and ngOnChanges() { // TODO } — the comment does not run.
+    // ngOnDestroy has a statement, and refresh() is not a hook.
+    assert.equal(entity.metrics.emptyLifecycleHooks, 2);
+    assert.deepEqual(
+      entity.findings.filter((f) => f.rule === 'empty-lifecycle-hook').map((f) => f.detail).sort(),
+      ['ngOnChanges', 'ngOnInit'],
+    );
+  });
+
+  test('empty hooks still count as implemented hooks', async () => {
+    const { entities } = await analyzeProject({ projectRoot: RULES });
+    // lifecycleHooks keeps its meaning. Excluding empty ones would silently
+    // change a stored metric and break every existing baseline.
+    assert.equal(metricsOf(entities, 'ScaffoldComponent').lifecycleHooks, 3);
+  });
+
+  test('counts a constructor with no parameters and no statements', async () => {
+    const { entities } = await analyzeProject({ projectRoot: RULES });
+    const entity = componentNamed(entities, 'ScaffoldComponent');
+    assert.equal(entity.metrics.emptyConstructors, 1);
+    const finding = entity.findings.find((f) => f.rule === 'empty-constructor');
+    assert.ok(finding && finding.line > 0 && finding.col > 0);
+  });
+
+  test('a constructor that injects is not empty, even with an empty body', async () => {
+    const { entities } = await analyzeProject({ projectRoot: RULES });
+    // constructor(private readonly router: Router) {} — the parameters are
+    // the injection. constructor-di reports it; this rule must not.
+    assert.equal(metricsOf(entities, 'MixedDiComponent').emptyConstructors, 0);
+  });
+
+  test('does not guess about constructor() { super(); }', async () => {
+    const { entities } = await analyzeProject({ projectRoot: RULES });
+    // Redundant or not depends on the parent class. An inexact rule cannot be
+    // allowed near a CI gate, so it is left alone.
+    assert.equal(metricsOf(entities, 'SuperCallComponent').emptyConstructors, 0);
+  });
+
+  test('a new file arriving with empty hooks is debt', async () => {
+    const result = await analyzeProject({ projectRoot: RULES });
+    const baseline = createBaseline(result);
+    baseline.entities = baseline.entities.filter((e) => e.className !== 'ScaffoldComponent');
+
+    const report = compareToBaseline(baseline, result);
+    const debt = report.newEntityDebt.filter((d) => d.entityId.includes('ScaffoldComponent'));
+    assert.ok(debt.some((d) => d.metric === 'emptyLifecycleHooks' && d.value === 2));
+    assert.ok(debt.some((d) => d.metric === 'emptyConstructors' && d.value === 1));
+  });
+
+  test('an existing file gaining an empty hook does not fail the build yet', async () => {
+    const result = await analyzeProject({ projectRoot: RULES });
+    const baseline = createBaseline(result);
+    const target = baseline.entities.find((e) => e.className === 'ScaffoldComponent');
+    assert.ok(target);
+    target.metrics['emptyLifecycleHooks'] = 0;
+
+    // New-file debt only, for now. An existing codebase may hold hundreds of
+    // these, and gating on old scaffolding would get the gate switched off.
+    const report = compareToBaseline(baseline, result);
+    assert.equal(report.regressions.filter((r) => r.metric === 'emptyLifecycleHooks').length, 0);
+  });
+});

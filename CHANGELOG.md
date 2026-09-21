@@ -14,6 +14,15 @@ breaks.
 
 ### Added
 
+- `empty-lifecycle-hook` and `empty-constructor`, with the metrics
+  `emptyLifecycleHooks` and `emptyConstructors`. They catch the
+  `constructor() {}` and `ngOnInit() {}` that older CLI versions generated and
+  agents still write. A constructor that injects through its parameters is not
+  counted, and neither is `constructor() { super(); }`, which cannot be judged
+  without reading the parent class. Both are debt on newly added files; neither
+  gates changes to existing files yet. `lifecycleHooks` keeps its meaning and
+  still includes empty hooks.
+
 - `analyze`, `baseline`, `check` and `repo-map` commands, covering steps 1–8
   of the build plan.
 - Component rules: class metrics, decorator flags stored raw, and template

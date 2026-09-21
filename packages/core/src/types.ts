@@ -63,6 +63,10 @@ export interface ComponentMetrics {
   subscribeCalls: number | null;
   signalApiCalls: number | null;
   lifecycleHooks: number | null;
+  /** Lifecycle hooks with no statements in their body. Also counted in `lifecycleHooks`. */
+  emptyLifecycleHooks: number | null;
+  /** Constructors with no parameters and no statements. */
+  emptyConstructors: number | null;
   publicMethods: number | null;
   classLoc: number | null;
 

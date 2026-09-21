@@ -178,6 +178,8 @@ function buildComponentEntity(
     subscribeCalls: classResult.subscribeCalls,
     signalApiCalls: classResult.signalApiCalls,
     lifecycleHooks: classResult.lifecycleHooks,
+    emptyLifecycleHooks: classResult.emptyLifecycleHooks,
+    emptyConstructors: classResult.emptyConstructors,
     publicMethods: classResult.publicMethods,
     classLoc: classResult.classLoc,
 

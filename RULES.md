@@ -19,6 +19,8 @@ Every rule emits a `Finding` with `file`, `line`, `col`. Counts are derived.
 | `subscribeCalls` | `.subscribe(` occurrences | Call expression text ends in `subscribe` |
 | `signalApiCalls` | `signal` `computed` `effect` `linkedSignal` `toSignal` | Count call sites |
 | `lifecycleHooks` | Implemented hooks | Method name in known list |
+| `emptyLifecycleHooks` | Hooks whose body has no statements | Also counted in `lifecycleHooks`. See below |
+| `emptyConstructors` | Constructors with no parameters and no statements | See below |
 | `publicMethods` | Not `private`/`protected` | Exclude lifecycle hooks |
 | `classLoc` | Lines in class body | Opening brace to closing brace. See below |
 
@@ -31,6 +33,27 @@ exactly the code this tool exists to find.
 
 Properties, get accessors and set accessors are all walked. A decorated
 get/set pair counts **once**, by property name.
+
+#### Empty hooks and empty constructors
+
+Older Angular CLI versions generated `constructor() {}` and an empty
+`ngOnInit(): void {}` in every component. That scaffolding is all over the code
+AI tools learned from, and agents still write it by habit.
+
+- **Empty means no statements.** `ngOnInit() { // TODO }` is empty: a comment
+  does not run.
+- **A constructor needs both**: no parameters *and* no statements.
+  `constructor(private http: HttpClient) {}` has an empty body but is not dead
+  code — its parameters are the injection, and `constructor-di` reports it.
+- **`constructor() { super(); }` is not counted.** It is usually redundant, but
+  whether it is depends on the parent class, which is another file. The rule
+  does not guess.
+- **`lifecycleHooks` still includes empty hooks.** Taking them out would change
+  what a stored metric means and break every existing baseline. The empty ones
+  are counted separately instead.
+
+Findings: `empty-lifecycle-hook` (detail: the hook name) and
+`empty-constructor`.
 
 #### `classLoc` measures the body, not the declaration
 
@@ -190,6 +213,8 @@ it dominates pre-2023 training data.
 | `destroy-subject` | `ngOnDestroy` + `Subject` teardown | `takeUntilDestroyed()` | component, service |
 | `behaviorsubject-state` | `BehaviorSubject` field | `signal()` | component, service |
 | `missing-onpush` | No OnPush, no signals | OnPush / zoneless-ready | component |
+| `empty-lifecycle-hook` | `ngOnInit() {}` and other hooks with no statements | delete it | component, service |
+| `empty-constructor` | `constructor() {}` with no parameters | delete it | component, service |
 | `class-based-guard` | Guard as class | `CanActivateFn` | route |
 | `class-based-resolver` | Resolver as class | `ResolveFn` | route |
 | `eager-route` | `component:` in route config | `loadComponent:` | route |
@@ -392,8 +417,16 @@ against a **separate, shorter list**: only patterns from the catalogue in
 section 2, which are wrong on arrival whatever the rest of the codebase does.
 
 `legacyControlFlow`, `loopsWithoutTrack`, `loopsTrackedByIndex`,
-`innerHtmlBindings`, `subscribeCalls`, plus `standalone: false` and an explicit
+`innerHtmlBindings`, `subscribeCalls`, `emptyLifecycleHooks`,
+`emptyConstructors`, plus `standalone: false` and an explicit
 `changeDetection: Default`.
+
+The two empty-code metrics are debt on a **new** file but do not yet gate
+changes to existing ones. They pass all three tests — exact, not gameable into
+worse design, and they only rise when someone adds one — but an existing
+codebase may hold hundreds of old scaffolds, and failing builds over code
+nobody touched would get the gate switched off before it caught anything. Move
+them to `GUARDED_METRICS` once the backlog is cleared.
 
 **Not the guarded list.** Reusing it would fail the build on `injectedDeps: 1`
 — on every component anyone adds, including a textbook-modern one that uses

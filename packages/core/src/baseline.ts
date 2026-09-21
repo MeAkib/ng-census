@@ -93,6 +93,14 @@ const DEBT_METRICS: readonly string[] = [
   'loopsTrackedByIndex',
   'innerHtmlBindings',
   'subscribeCalls',
+  // Empty `ngOnInit() {}` and `constructor() {}` in a brand-new file are the
+  // clearest sign of copied or generated boilerplate. Exact, and the only way
+  // to lower the count is to delete dead code, so it cannot be gamed into
+  // worse design. Deliberately *not* in GUARDED_METRICS yet: an existing
+  // codebase may hold hundreds of them, and failing every build over old
+  // scaffolding would get the gate switched off before it caught anything.
+  'emptyLifecycleHooks',
+  'emptyConstructors',
 ];
 
 /** Raw decorator flags where one value is unambiguously a step backwards. */
@@ -126,6 +134,8 @@ export const METRIC_LABELS: Readonly<Record<string, string>> = {
   modernControlFlow: 'modern control flow',
   asyncPipes: 'async pipes',
   signalApiCalls: 'signal API calls',
+  emptyLifecycleHooks: 'empty lifecycle hooks',
+  emptyConstructors: 'empty constructors',
 };
 
 export function createBaseline(result: AnalysisResult): Baseline {

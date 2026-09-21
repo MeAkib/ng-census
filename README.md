@@ -254,6 +254,7 @@ Component rules from the catalogue in `RULES.md` section 2, all emitting
 findings with a line and column: `legacy-control-flow`, `constructor-di`,
 `decorator-input`, `decorator-output`, `manual-subscribe`, `ngmodule-component`,
 `missing-onpush`, `destroy-subject`, `behaviorsubject-state`,
+`empty-lifecycle-hook`, `empty-constructor`,
 `method-call-in-template`, `loop-without-track`, `loop-tracked-by-index`,
 `inner-html-binding`.
 
