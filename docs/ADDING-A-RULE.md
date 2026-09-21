@@ -290,7 +290,7 @@ are dropped automatically, so an empty rule costs nothing.
 
 - `RULES.md` — the exact definition from step 0, in the rule table
 - `RULES.md` section 2 — add it to the legacy catalogue with its modern form
-- `README.md` — add the rule id to the list of component rules
+- `README.md` — add a row to the "What it finds" table, if it is a pattern people migrate away from
 
 A rule with no written definition is a number two people will read
 differently.

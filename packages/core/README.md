@@ -1,44 +1,37 @@
 # @ng-census/core
 
-The analyzer behind [ng-census](https://www.npmjs.com/package/ng-census).
+The engine behind [ng-census](https://www.npmjs.com/package/ng-census). Use it
+to build your own tools on the same analysis — a CI bot, an editor extension,
+an MCP server.
 
-**You probably want the CLI instead:**
-
-```bash
-npx ng-census analyze
-```
-
-This package is for building your own tooling on the same engine — a CI bot,
-an editor extension, an MCP server. It reads an Angular project and returns
-data. It never prints, formats or exits.
+**Just want to analyze a project?** Use the CLI: `npx ng-census analyze`.
 
 ```ts
 import { analyzeProject } from '@ng-census/core';
 
-const result = await analyzeProject({ projectRoot: '/path/to/angular/app' });
+const { run, entities } = await analyzeProject({ projectRoot: '/path/to/app' });
 
-for (const entity of result.entities) {
-  console.log(entity.id, entity.metrics.legacyControlFlow);
-  for (const finding of entity.findings) {
-    console.log(`  ${finding.rule} at ${finding.file}:${finding.line}:${finding.col}`);
+for (const component of entities) {
+  console.log(component.id, component.metrics.legacyControlFlow);
+  for (const f of component.findings) {
+    console.log(`  ${f.rule} ${f.file}:${f.line}:${f.col}`);
   }
 }
 ```
 
-The shape of `result` is defined in `types.ts`, and every metric is defined
-exactly in
-[RULES.md](https://github.com/MeAkib/ng-census/blob/main/RULES.md).
+It reads files and returns data. It never prints, formats or exits.
 
-Two things to know before you store the output:
+Before storing the output, know two rules:
 
-- **Raw observations, not conclusions.** `standaloneFlag: "absent"` is what
-  the decorator said. Whether that means standalone depends on
-  `run.angularMajor` — from Angular 19 it does.
-- **`null` is not `0`.** `null` means "could not be measured here"; `0` means
-  "measured, and there were none". Charts must skip `null`.
+- **Raw values, not conclusions.** `standaloneFlag: "absent"` is what the
+  decorator said. Whether that means standalone depends on
+  `run.angularMajor` — from Angular 19, it does.
+- **`null` is not `0`.** `null` means "could not be measured here". Skip it in
+  charts; never plot it as zero.
 
-Early (0.x): metric definitions may still change before 1.0. A change to what
-a metric means is listed as breaking in the
+Every metric is defined in
+[RULES.md](https://github.com/MeAkib/ng-census/blob/main/RULES.md). Early
+release (0.x): a change to what a metric means is marked as breaking in the
 [changelog](https://github.com/MeAkib/ng-census/blob/main/CHANGELOG.md).
 
-MIT licensed.
+MIT
