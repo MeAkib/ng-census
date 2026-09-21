@@ -22,10 +22,24 @@ can compare last quarter to this one.
 
 ## Install
 
-Not published yet. To run from source:
+```bash
+npx ng-census analyze            # try it without installing
+npm install -D ng-census         # or add it to a project
+```
+
+Node 22 or newer. It installs cleanly into Angular 17–22 projects: ng-census
+brings its own copy of the Angular template compiler and never touches yours.
+
+> **Early (0.x).** Metric definitions may still change before 1.0, while real
+> use shows which rules are signal and which are noise. A change to what a
+> metric *means* is always listed as breaking in the
+> [changelog](CHANGELOG.md), because it makes older baselines incomparable.
+> Pin the exact version in CI.
+
+To run from source instead:
 
 ```bash
-git clone <repo>
+git clone https://github.com/MeAkib/ng-census.git
 cd ng-census
 npm install
 npm run build

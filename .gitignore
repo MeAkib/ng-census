@@ -11,3 +11,8 @@ dist/
 .census-baseline.json
 census-report.html
 .DS_Store
+
+# Copied in by scripts/prepare-package.mjs at pack time. Edit the root copies.
+packages/*/LICENSE
+packages/cli/README.md
+*.tgz

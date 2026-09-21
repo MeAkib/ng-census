@@ -155,6 +155,41 @@ The short version:
 If two people could reasonably disagree about what the number should be, the
 definition is not finished.
 
+## Releasing
+
+Core and the CLI are released together, with the same version number. The CLI
+pins core to that exact version, and a test fails if they drift apart.
+
+1. Move the `[Unreleased]` section of `CHANGELOG.md` under a new version
+   heading. If any metric changed what it *means*, say so under "Changed" and
+   bump the minor version (0.x) — older baselines are no longer comparable.
+2. Set the same version in `packages/core/package.json`,
+   `packages/cli/package.json`, and the CLI's dependency on
+   `@ng-census/core`.
+3. Check what would be published, without publishing:
+
+   ```bash
+   npm pack --dry-run -w packages/core
+   npm pack --dry-run -w packages/cli
+   ```
+
+   Each should list `README.md`, `LICENSE`, `dist/` and `src/`. The README and
+   LICENSE are copied in from the root by `scripts/prepare-package.mjs` — edit
+   the root copies, never the package ones.
+4. Publish **core first**, because the CLI depends on it:
+
+   ```bash
+   npm publish -w packages/core
+   npm publish -w packages/cli
+   ```
+
+   Each publish rebuilds and runs the whole suite first (`prepublishOnly`), so
+   a stale build can never ship.
+5. Tag it: `git tag v0.1.0 && git push --tags`.
+
+A published version can never be reused, and npm only allows unpublishing
+within 72 hours. A mistake in 0.1.0 is fixed in 0.1.1.
+
 ## What not to add
 
 **Per-developer attribution.** No "complexity by author". The moment that view

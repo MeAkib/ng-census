@@ -92,6 +92,8 @@ breaks.
 
 ### Changed
 
+- Node 22 or newer. Node 20 reached end of life in April 2026, and CI tests
+  22 and 24 only.
 - Support policy: Angular 17, 18 and 19 run with a warning. Nothing is refused
   outright — a number with a caveat is more useful than an error message.
 - `classLoc` now measures the class body. Any baseline taken before this is

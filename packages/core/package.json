@@ -2,6 +2,28 @@
   "name": "@ng-census/core",
   "version": "0.1.0",
   "description": "Angular codebase analyzer engine. Returns data, never formats it.",
+  "keywords": [
+    "analyzer",
+    "angular",
+    "ci",
+    "control-flow",
+    "metrics",
+    "migration",
+    "signals",
+    "standalone",
+    "static-analysis"
+  ],
+  "homepage": "https://github.com/MeAkib/ng-census#readme",
+  "bugs": {
+    "url": "https://github.com/MeAkib/ng-census/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MeAkib/ng-census.git",
+    "directory": "packages/core"
+  },
+  "license": "MIT",
+  "author": "Akib (https://github.com/MeAkib)",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -12,11 +34,21 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "src"
   ],
-  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "prepack": "node ../../scripts/prepare-package.mjs",
+    "prepublishOnly": "cd ../.. && npm test"
+  },
   "dependencies": {
     "@angular/compiler": "^22.1.6",
     "ts-morph": "^28.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -2,7 +2,9 @@ import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import {
+  TOOL_VERSION,
   analyzeProject,
   collectSourceFiles,
   findWorkspaceProject,
@@ -822,5 +824,29 @@ describe('dead scaffolding', () => {
     // these, and gating on old scaffolding would get the gate switched off.
     const report = compareToBaseline(baseline, result);
     assert.equal(report.regressions.filter((r) => r.metric === 'emptyLifecycleHooks').length, 0);
+  });
+});
+
+describe('release hygiene', () => {
+  const root = join(here, '..', '..');
+  const versionOf = (dir: string): string =>
+    (JSON.parse(readFileSync(join(root, dir, 'package.json'), 'utf8')) as { version: string }).version;
+
+  test('the version stored in every run is the published version', () => {
+    // A stored run says which rule definitions produced its numbers through
+    // this field. It used to be hardcoded, and would have gone stale on the
+    // first version bump.
+    assert.equal(TOOL_VERSION, versionOf('packages/core'));
+  });
+
+  test('core and cli are released in lockstep', () => {
+    // The CLI pins core to an exact version. If these drift, `npm install
+    // ng-census` pulls a core the CLI was never tested against.
+    const cli = JSON.parse(readFileSync(join(root, 'packages/cli/package.json'), 'utf8')) as {
+      version: string;
+      dependencies: Record<string, string>;
+    };
+    assert.equal(cli.version, versionOf('packages/core'));
+    assert.equal(cli.dependencies['@ng-census/core'], versionOf('packages/core'));
   });
 });

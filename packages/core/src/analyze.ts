@@ -35,7 +35,25 @@ import type {
  * consumers of one engine rather than four forks of it.
  */
 
-export const TOOL_VERSION = '0.1.0';
+/**
+ * The tool's version, read from this package's own package.json.
+ *
+ * It used to be a hardcoded string, which is a bug waiting for the first
+ * release: bump package.json to 0.1.1, forget this line, and every run stored
+ * from then on claims to be 0.1.0. That version is how a stored run says which
+ * rule definitions produced its numbers, so it must never be wrong.
+ *
+ * `../package.json` resolves from `dist/analyze.js` to the package root, both
+ * in this repository and inside the published tarball.
+ */
+export const TOOL_VERSION: string = readToolVersion();
+
+function readToolVersion(): string {
+  const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as {
+    version?: unknown;
+  };
+  return typeof manifest.version === 'string' ? manifest.version : '0.0.0-unknown';
+}
 
 /**
  * Directories skipped by default.

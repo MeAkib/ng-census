@@ -175,16 +175,19 @@ ng-census analyze --json | jq '.entities[0]'
 
 ## `ng-census: command not found`
 
-The package is not published yet. Either run it through npm from the repo:
+It is not installed in this project, or not on your PATH. Either run it
+through npx, which needs no install:
 
 ```bash
-npm run census -- analyze /path/to/app
+npx ng-census analyze
 ```
 
-or link it once, after which `ng-census` works anywhere:
+or add it to the project and use it from an npm script:
 
 ```bash
-cd packages/cli && npm link
+npm install -D ng-census
 ```
 
-Undo that with `npm unlink -g ng-census`.
+Working on ng-census itself? Run it from the repository with
+`npm run census -- analyze /path/to/app`, or link it once with
+`cd packages/cli && npm link`.
